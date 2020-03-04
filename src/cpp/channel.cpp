@@ -53,10 +53,7 @@ StoredArray Channel::pop(const sol::optional<int>& duration,
     this_thread::interruptionPoint();
     std::unique_lock<std::mutex> lock(ctx_->lock_);
     {
-        this_thread::setNotifier(this);
-        ScopeGuard guard([](){
-            this_thread::setNotifier(nullptr);
-        });
+        this_thread::ScopedSetInterruptable interruptable(this);
 
         Timer timer(duration ? fromLuaTime(duration.value(), period) :
                                std::chrono::milliseconds());

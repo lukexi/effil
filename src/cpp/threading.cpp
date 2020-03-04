@@ -88,9 +88,15 @@ void luaHook(lua_State*, lua_Debug*) {
 
 namespace this_thread {
 
-void setNotifier(IInterruptable* notifier) {
+ScopedSetInterruptable::ScopedSetInterruptable(IInterruptable* notifier) {
     if (thisThreadHandle) {
         thisThreadHandle->setNotifier(notifier);
+    }
+}
+
+ScopedSetInterruptable::~ScopedSetInterruptable() {
+    if (thisThreadHandle) {
+        thisThreadHandle->setNotifier(nullptr);
     }
 }
 

@@ -11,51 +11,65 @@ local function interruption_test(worker)
     ctx.step = 0
     local thr = ctx(state)
 
-    effil.sleep(1) -- let thread starts
+    effil.sleep(500, 'ms') -- let thread starts
 
     local start_time = os.time()
-    thr:cancel(10)
+    thr:cancel(1)
+
     test.equal(thr:status(), "canceled")
     test.almost_equal(os.time(), start_time, 1)
     state.stop = true
 end
 
-test.thread_interrupt.thread_wait = function()
+local get_thread_for_test = function(state)
+    local runner = effil.thread(function()
+        while not state.stop do end
+    end)
+    runner.step = 0
+    return runner()
+end
+
+test.thread_interrupt.thread_wait_p = function(params)
     interruption_test(function(state)
-        effil.thread(function()
-            while not state.stop do end
-        end)():wait()
+        get_thread_for_test(state):wait(table.unpack(params))
     end)
 end
 
-test.thread_interrupt.thread_get = function()
+test.thread_interrupt.thread_get_p = function(params)
     interruption_test(function(state)
-        local ctx = effil.thread(function()
-            while not state.stop do end
-        end)
-        ctx.step = 0
-        ctx():get()
+        get_thread_for_test(state):get(table.unpack(params))
     end)
 end
 
-test.thread_interrupt.thread_cancel = function()
+test.thread_interrupt.thread_cancel_p = function(params)
     interruption_test(function(state)
-        local ctx = effil.thread(function()
-            while not state.stop do end
-        end)
-        ctx.step = 0
-        ctx():cancel()
+        get_thread_for_test(state):cancel(table.unpack(params))
     end)
 end
 
-test.thread_interrupt.thread_pause = function()
+test.thread_interrupt.thread_pause_p = function(params)
     interruption_test(function(state)
-        local ctx = effil.thread(function()
-            while not state.stop do end
-        end)
-        ctx.step = 0
-        ctx():pause()
+        get_thread_for_test(state):pause(table.unpack(params))
     end)
+end
+
+test.thread_interrupt.channel_pop_p = function(params)
+    interruption_test(function()
+        effil.channel():pop(table.unpack(params))
+    end)
+end
+
+local test_timimgs = {
+    {}, -- infinite wait
+    {10, 's'},
+}
+
+for _, test_config in ipairs(test_timimgs) do
+    test.thread_interrupt.thread_wait_p(test_config)
+    test.thread_interrupt.thread_get_p(test_config)
+    test.thread_interrupt.thread_cancel_p(test_config)
+    test.thread_interrupt.thread_pause_p(test_config)
+    test.thread_interrupt.channel_pop_p(test_config)
 end
 
 test.thread_interrupt.sleep = function()
@@ -69,11 +83,5 @@ test.thread_interrupt.yield = function()
         while true do
             effil.yield()
         end
-    end)
-end
-
-test.thread_interrupt.channel_pop = function()
-    interruption_test(function()
-        effil.channel():pop()
     end)
 end

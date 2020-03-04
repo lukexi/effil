@@ -66,19 +66,18 @@ public:
 
     void destroyLua() { lua_.reset(); }
 
-    Status status() { return status_; }
+    Status status() const { return status_; }
 
     StoredArray& result() { return result_; }
 
     void setNotifier(IInterruptable* notifier) {
-        std::unique_lock<std::mutex> lock(currNotifierLock_);
         currNotifier_ = notifier;
     }
 
-    void interrupt() {
-        std::unique_lock<std::mutex> lock(currNotifierLock_);
-        if (currNotifier_)
-            currNotifier_->interrupt();
+    void interrupt() const {
+        IInterruptable* currNotifier = currNotifier_;
+        if (currNotifier)
+            currNotifier->interrupt();
     }
 
 private:
@@ -89,10 +88,7 @@ private:
     Notifier completionNotifier_;
     std::mutex stateLock_;
     StoredArray result_;
-
-    std::mutex currNotifierLock_;
     IInterruptable* currNotifier_;
-
     std::unique_ptr<sol::state> lua_;
 };
 

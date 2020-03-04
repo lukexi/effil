@@ -64,7 +64,7 @@ std::chrono::milliseconds fromLuaTime(int duration, const sol::optional<std::str
 using namespace std::chrono;
 
 Timer::Timer(const milliseconds& timeout)
-    : timeout_(timeout), startTime_(system_clock::now())
+    : timeout_(timeout), startTime_(high_resolution_clock::now())
 {}
 
 bool Timer::isFinished() {
@@ -72,7 +72,7 @@ bool Timer::isFinished() {
 }
 
 milliseconds Timer::left() {
-    const auto diff = system_clock::now() - startTime_;
+    const auto diff = high_resolution_clock::now() - startTime_;
     return timeout_ > diff ? duration_cast<milliseconds>((timeout_ - diff)):
                              milliseconds(0);
 }

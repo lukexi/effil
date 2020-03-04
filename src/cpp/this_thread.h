@@ -8,7 +8,12 @@ struct IInterruptable;
 
 namespace this_thread {
 
-void setNotifier(IInterruptable* notifier);
+class ScopedSetInterruptable
+{
+public:
+    ScopedSetInterruptable(IInterruptable* notifier);
+    ~ScopedSetInterruptable();
+};
 void interruptionPoint();
 
 // Lua API

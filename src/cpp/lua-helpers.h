@@ -42,7 +42,7 @@ public:
 
 private:
     std::chrono::milliseconds timeout_;
-    std::chrono::system_clock::time_point startTime_;
+    std::chrono::high_resolution_clock::time_point startTime_;
 };
 
 } // namespace effil

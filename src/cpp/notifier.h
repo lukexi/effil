@@ -31,10 +31,7 @@ public:
     void wait() {
         this_thread::interruptionPoint();
 
-        this_thread::setNotifier(this);
-        ScopeGuard scope([](){
-            this_thread::setNotifier(nullptr);
-        });
+        this_thread::ScopedSetInterruptable interruptable(this);
 
         std::unique_lock<std::mutex> lock(mutex_);
         while (!notified_) {
@@ -50,10 +47,7 @@ public:
         if (period == std::chrono::seconds(0) || notified_)
             return notified_;
 
-        this_thread::setNotifier(this);
-        ScopeGuard scope([](){
-            this_thread::setNotifier(nullptr);
-        });
+        this_thread::ScopedSetInterruptable interruptable(this);
 
         Timer timer(period);
         std::unique_lock<std::mutex> lock(mutex_);

@@ -5,7 +5,7 @@ local effil = effil
 test.thread_interrupt.tear_down = default_tear_down
 
 local function interruption_test(worker)
-    local state = effil.table({ stop = false })
+    local state = effil.table { stop = false }
 
     local ctx = effil.thread(worker)
     ctx.step = 0
@@ -29,47 +29,34 @@ local get_thread_for_test = function(state)
     return runner()
 end
 
-test.thread_interrupt.thread_wait_p = function(params)
+test.thread_interrupt.thread_wait = function()
     interruption_test(function(state)
-        get_thread_for_test(state):wait(table.unpack(params))
+        get_thread_for_test(state):wait()
     end)
 end
 
-test.thread_interrupt.thread_get_p = function(params)
+test.thread_interrupt.thread_get = function()
     interruption_test(function(state)
-        get_thread_for_test(state):get(table.unpack(params))
+        get_thread_for_test(state):get()
     end)
 end
 
-test.thread_interrupt.thread_cancel_p = function(params)
+test.thread_interrupt.thread_cancel = function()
     interruption_test(function(state)
-        get_thread_for_test(state):cancel(table.unpack(params))
+        get_thread_for_test(state):cancel()
     end)
 end
 
-test.thread_interrupt.thread_pause_p = function(params)
+test.thread_interrupt.thread_pause = function()
     interruption_test(function(state)
-        get_thread_for_test(state):pause(table.unpack(params))
+        get_thread_for_test(state):pause()
     end)
 end
 
-test.thread_interrupt.channel_pop_p = function(params)
+test.thread_interrupt.channel_pop = function()
     interruption_test(function()
-        effil.channel():pop(table.unpack(params))
+        effil.channel():pop()
     end)
-end
-
-local test_timimgs = {
-    {}, -- infinite wait
-    {10, 's'},
-}
-
-for _, test_config in ipairs(test_timimgs) do
-    test.thread_interrupt.thread_wait_p(test_config)
-    test.thread_interrupt.thread_get_p(test_config)
-    test.thread_interrupt.thread_cancel_p(test_config)
-    test.thread_interrupt.thread_pause_p(test_config)
-    test.thread_interrupt.channel_pop_p(test_config)
 end
 
 test.thread_interrupt.sleep = function()

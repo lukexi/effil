@@ -45,22 +45,12 @@ std::string statusToString(Status status) {
     return "unknown";
 }
 
-#if LUA_VERSION_NUM > 501
-
 int luaErrorHandler(lua_State* state) {
     luaL_traceback(state, state, nullptr, 1);
     const auto stacktrace = sol::stack::pop<std::string>(state);
     thisThreadHandle->result().emplace_back(createStoredObject(stacktrace));
     throw Exception() << sol::stack::pop<std::string>(state);
 }
-
-const lua_CFunction luaErrorHandlerPtr = luaErrorHandler;
-
-#else
-
-const lua_CFunction luaErrorHandlerPtr = nullptr;
-
-#endif // LUA_VERSION_NUM > 501
 
 void luaHook(lua_State*, lua_Debug*) {
     assert(thisThreadHandle);
@@ -147,7 +137,7 @@ ThreadHandle::ThreadHandle()
         : status_(Status::Running)
         , command_(Command::Run)
         , currNotifier_(nullptr)
-        , lua_(std::make_unique<sol::state>(luaErrorHandlerPtr)) {
+        , lua_(std::make_unique<sol::state>(luaErrorHandler)) {
     luaL_openlibs(*lua_);
 }
 

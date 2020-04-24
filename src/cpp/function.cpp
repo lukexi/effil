@@ -2,6 +2,15 @@
 
 namespace effil {
 
+FunctionData::FunctionData() : cFunction(nullptr), isCFunction(true)
+{}
+
+FunctionData::~FunctionData()
+{
+    if (!isCFunction)
+        function.~basic_string();
+}
+
 Function::Function(const sol::function& luaObject) {
     SolTableToShared visited;
     construct(luaObject, visited);
@@ -22,7 +31,18 @@ void Function::construct(const sol::function& luaObject, SolTableToShared& visit
     lua_getinfo(state, ">u", &dbgInfo); // function is popped from stack here
     sol::stack::push(state, luaObject);
 
-    ctx_->function = dumpFunction(luaObject);
+    if (lua_iscfunction(state, -1))
+    {
+        ctx_->isCFunction = true;
+        ctx_->cFunction = lua_tocfunction (state, -1);
+        REQUIRE(ctx_->cFunction) << "cannot get pointer to provided C function";
+    }
+    else
+    {
+        ctx_->isCFunction = false;
+        ctx_->function = dumpFunction(luaObject);
+    }
+
     ctx_->upvalues.resize(dbgInfo.nups);
 #if LUA_VERSION_NUM > 501
     ctx_->envUpvaluePos = 0; // means no _G upvalue
@@ -53,7 +73,8 @@ void Function::construct(const sol::function& luaObject, SolTableToShared& visit
         }
         catch(const std::exception& err) {
             sol::stack::pop<sol::object>(state);
-            throw effil::Exception() << "bad function upvalue #" << (int)i << " (" << err.what() << ")";
+            throw effil::Exception() << "bad function upvalue #" << (int)i
+                                     << " (" << err.what() << ")";
         }
 
         if (storedObject->gcHandle() != nullptr) {
@@ -65,12 +86,21 @@ void Function::construct(const sol::function& luaObject, SolTableToShared& visit
     sol::stack::pop<sol::object>(state);
 }
 
+
 sol::object Function::convert(lua_State* state, const Converter& clbk) const
 {
-    sol::function result = loadString(state, ctx_->function);
-    assert(result.valid());
+    if (ctx_->isCFunction)
+    {
+        assert(ctx_->cFunction);
+        sol::stack::push(state, ctx_->cFunction);
+    }
+    else
+    {
+        sol::function func = loadString(state, ctx_->function);
+        assert(func.valid());
+        sol::stack::push(state, func);
+    }
 
-    sol::stack::push(state, result);
     for(size_t i = 0; i < ctx_->upvalues.size(); ++i) {
 #if LUA_VERSION_NUM > 501
         if (ctx_->envUpvaluePos == i + 1) {
